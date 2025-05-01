@@ -1,0 +1,80 @@
+This script is designed to run a binary file (`qatest-linux-amd64`) that deterministically outputs one of the following on each execution:
+- `fizz`
+- `buzz`
+- `fizzbuzz`
+- (blank line)
+- `END` (to mark end of sequence)
+
+It tracks how many times "fizz" is printed until the end of the sequence, while maintaining execution state across runs using a `.sequence_index` file.
+
+---
+
+## Setup
+
+Ensure your binary `qatest-linux-amd64` is:
+- Present in the script directory.
+- Executable (`chmod +x qatest-linux-amd64`).
+
+---
+
+## Usage
+---
+
+./script.sh [MAX_ITERATIONS]
+---
+
+- **`MAX_ITERATIONS`** (optional): Maximum number of times the binary will be run. Default is `2000`.
+
+Example:
+---
+
+./script.sh 1234
+
+
+---
+
+## Files Used
+-------------------------------------------------------------------
+| File                 | Description                              |
+|----------------------|------------------------------------------|
+| `script.sh`          | The main shell script                    |
+| `qatest-linux-amd64` | Binary that outputs deterministic values |
+| `.sequence_index`    | Tracks last run index                    |
+| `output1236.log`     | Logs all outputs from the binary         |
+-------------------------------------------------------------------
+
+---
+
+## Output Summary
+
+After the run, the script prints:
+
+- Total times `fizz` was seen
+- Ratio of `fizz/total` executions
+
+
+Test cases: using "script.sh" file a user can test multiple scenariosas mentioned below.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Test Case # | Scenario                        | Setup                                        | Command            | Expected Outcome                                                                 |
+|-------------|---------------------------------|----------------------------------------------|--------------------|----------------------------------------------------------------------------------|
+| 1           | Fresh run, no sequence file     | Delete `.sequence_index`                     | `./script.sh 50`   | Creates file, starts from 1, writes output, summary printed.                     |
+| 2           | Resume from saved position      | `.sequence_index` = 30                       | `./script.sh 100`  | Resumes from 30, stops at 100 or END.                                            |
+| 3           | Sequence is 0                   | `.sequence_index` = 0                        | `./script.sh`      | Resets to 1, clears output file, starts fresh.                                   |
+| 4           | Binary missing                  | Rename/delete binary file                    | `./script.sh`      | Error message: binary not found.                                                 |
+| 5           | Binary not executable           | `chmod -x qatest-linux-amd64`                | `./script.sh`      | Error: binary lacks execute permissions.                                         |
+| 6           | Sequence file not writable      | `chmod -w .sequence_index`                   | `./script.sh`      | Error: no write permission.                                                      |
+| 7           | Sequence file not readable      | `chmod -r .sequence_index`                   | `./script.sh`      | Error: no read permission.                                                       |
+| 8           | Output cleared on fresh start   | `.sequence_index` = 0                        | `./script.sh`      | Output file cleared and rewritten.                                               |
+| 9           | Short limited run               | Valid state                                  | `./script.sh 3`    | Executes 3 runs, respects limit.                                                 |
+| 10          | Early END from binary           | Binary emits END on 10th run                 | `./script.sh 100`  | Stops at 10, resets sequence to 0.                                               |
+| 11          | Max iterations reached          | Binary never ends                            | `./script.sh 20`   | Stops after 20 runs, shows summary.                                              |
+| 12          | Output in read-only dir         | Set OUTFILE to `/readonly/output.log`        | `./script.sh`      | Output write fails or script exits with error.                                   |
+| 13          | Invalid argument to script      | Pass non-numeric string as arg               | `./script.sh abc`  | Defaults to 2000 iterations, runs without crash.                                 |
+| 14          | Handles blank binary output     | Binary outputs empty lines                   | `./script.sh 10`   | Blank lines are counted in summary.                                              |
+| 15          | Full run + summary accuracy     | Run to completion with END at 1236           |`./script.sh 1236`  | Summary shows correct fizz, buzz, fizzbuzz, END count, and fizz/total.           |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+ 
